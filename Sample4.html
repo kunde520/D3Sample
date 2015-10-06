@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>D3 Sample4</title>
+	<style type="text/css">
+		.chart rect {
+			fill: steelblue;
+		}
+		.chart rect.odd {
+			fill: brown;
+		}
+		.chart text {
+			fill: white;
+			font: 10px sans-serif;
+			text-anchor: middle;
+		}
+		.axis text {
+			fill: black;
+			font: 10px sans-serif;
+		}
+
+		.axis path,
+		.axis line {
+			fill: none;
+			stroke: #000;
+			shape-rendering: crispEdges;
+		}
+
+		.x.axis path {
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-8 col-md-9 col-lg-10">
+				<h2>D3 Sample4</h2>
+				<svg class="chart"></svg>
+			</div>
+		</div>
+	</div>
+	<script src="Scripts/jquery-1.10.2.min.js"></script>
+	<script charset="utf-8" src="Scripts/d3.js"></script>
+	<script src="Scripts/linq.js"></script>
+	<script type="text/javascript">
+		var margin = { top: 20, right: 30, bottom: 30, left: 40 },
+		width = 960 - margin.left - margin.right,
+		height = 500 - margin.top - margin.bottom;
+
+		var chart = d3.select(".chart")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+		
+		d3.csv("tag.csv", type, function (error, data) {
+			var linq = Enumerable.From(data);
+			var result =
+			linq.GroupBy(function (x) { return x.Date; })
+			.Select(function (x) {
+				return {
+					Date: x.Key(),
+					GroupByDate: x.source
+				};
+			}).ToArray();
+
+			function interpolateData(date) {
+				var _index = result.map(function (e) { return e.Date; }).indexOf(date);
+				return result[_index].GroupByDate;
+			}
+			var dataset = interpolateData("2015/01/01");
+
+			var x = d3.scale.ordinal()
+			.rangeRoundBands([0, width], .1);
+
+			x.domain(dataset.map(function (d) { return d.Tag }));
+
+			var y = d3.scale.linear()
+			.range([height, 0]);
+			y.domain([0, d3.max(dataset.map(function (d) { return d.positive+d.negative }))]);
+
+			var xAxis = d3.svg.axis()
+			.scale(x)
+			.orient("bottom");
+
+			var yAxis = d3.svg.axis()
+			.scale(y)
+			.orient("left")
+			.ticks(10);
+
+			chart.append("g")
+			.attr("class", "x axis")
+			.attr("transform", "translate(0," + height + ")")
+			.call(xAxis);
+
+			chart.append("g")
+			.attr("class", "y axis")
+			.call(yAxis);
+
+			var barWidth = width / dataset.length;
+			var bar = chart.selectAll(".bar")
+			.data(dataset)
+			.enter();
+
+			bar.append("rect")
+			.attr("x", function (d,i) { return i * barWidth +5; })
+			.attr("y", function (d) { return y(d.positive); })
+			.attr("class", "bar")
+			.attr("height", function (d) { return height - y(d.positive); })
+			.attr("width", function () {
+				return barWidth - 2;
+			})
+			.append("title")
+			.text("正向評語");
+
+			bar.append("text")
+			.attr("x", function (d,i) { return i * barWidth+5+barWidth / 2; })
+			.attr("y", function (d) { return y(d.positive) + 10; })
+			.attr("dy", ".75em")
+			.text(function (d) { return d.positive; });
+
+			bar.append("rect")
+			.attr("x", function (d,i) { return i * barWidth +5; })
+			.attr("y", function (d) { return y(d.positive+d.negative); })
+			.attr("class", "bar odd")
+			.attr("height", function (d) { return  y(d.positive)-y(d.positive+d.negative); })
+			.attr("width", function () {
+				return barWidth - 2;
+			})
+			.append("title")
+			.text("負向評語");
+
+			bar.append("text")
+			.attr("x", function (d,i) { return i * barWidth+5+barWidth / 2; })
+			.attr("y", function (d) { return y(d.positive+d.negative) + 10; })
+			.attr("dy", ".75em")
+			.text(function (d) { return d.negative; });
+			
+		});
+
+		function type(d) {
+			d.positive = 0;
+			d.negative = 0;
+			for (var key in d) {
+				if (key.endsWith("P"))
+					d.positive += +d[key];
+				if (key.endsWith("M"))
+					d.negative += +d[key];
+
+			}
+			return d;
+		}
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>D3 Sample2</title>
+	<style type="text/css">
+		.circle circle {
+			fill: steelblue;
+		}
+		.circle circle.odd {
+			fill: brown;
+		}
+		.circle text {
+			fill: balck;
+			font: 10px sans-serif;
+			text-anchor: middle;
+		}	
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-8 col-md-9 col-lg-10">
+				<h2>D3 Sample2</h2>
+				<svg class="circle"></svg>
+			</div>
+		</div>
+	</div>
+	<script src="Scripts/jquery-1.10.2.min.js"></script>
+	<script charset="utf-8" src="Scripts/d3.js"></script>
+	<script type="text/javascript">
+		var width = 960,
+		height = 500;
+		var chart = d3.select(".circle")
+		.attr("width", width)
+		.attr("height", height);
+		var date = "2015-01-01";
+		var tags = ["台北市正向", "台北市負向", "新北市正向", "新北市負向", "桃園市正向", "桃園市負向",
+			 "台中市正向", "台中市負向", "台南市正向", "台南市負向", "高雄市正向", "高雄市負向"];
+		var values = [76, 8, 71, 98, 11, 10, 49, 74, 97, 55, 98, 26];
+		var barWidth = width / values.length;
+		var bar = chart.selectAll("circle")
+		.data(values)
+		.enter();
+		bar.append("circle")
+		.attr("cx", function (d, i) { return i * barWidth +50; })
+		.attr("cy", 100)
+		.attr("class", function (d, i) {
+			if ((i % 2) == 1) return "odd";	})
+		.attr("r", function (d) { return Math.sqrt(d); });
+		bar.append("text")
+		.attr("x", function (d,i) { return i * barWidth +50; })
+		.attr("y", function (d) { return 80; })
+		.attr("dy", ".75em")
+		.text(function (d,i) {
+			return tags[i];
+		});
+	</script>
+</body>
+</html>
