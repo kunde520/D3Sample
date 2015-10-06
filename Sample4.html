@@ -30,6 +30,10 @@
 		.x.axis path {
 			display: none;
 		}
+		.bigLabel {
+			font: 500 100px "Helvetica Neue" !important;
+			fill: #635959 !important;
+		}
 	</style>
 </head>
 <body>
@@ -51,10 +55,12 @@
 
 		var chart = d3.select(".chart")
 		.attr("width", width + margin.left + margin.right)
-		.attr("height", height + margin.top + margin.bottom)
+		.attr("height", height + margin.top + margin.bottom+200)
 		.append("g")
 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+		var label = chart.append("text").attr("class", "bigLabel").attr("text-anchor", "end")
+		.attr("y", height + 200).attr("x", width / 2).text('2015/01/01');
 		
 		d3.csv("tag.csv", type, function (error, data) {
 			var linq = Enumerable.From(data);
@@ -141,18 +147,18 @@
 			
 		});
 
-		function type(d) {
-			d.positive = 0;
-			d.negative = 0;
-			for (var key in d) {
-				if (key.endsWith("P"))
-					d.positive += +d[key];
-				if (key.endsWith("M"))
-					d.negative += +d[key];
+function type(d) {
+	d.positive = 0;
+	d.negative = 0;
+	for (var key in d) {
+		if (key.endsWith("P"))
+			d.positive += +d[key];
+		if (key.endsWith("M"))
+			d.negative += +d[key];
 
-			}
-			return d;
-		}
+	}
+	return d;
+}
 </script>
 </body>
 </html>

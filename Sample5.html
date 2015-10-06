@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>D3 Sample5</title>
+	<style type="text/css">
+		.bar {
+			fill: steelblue;
+		}
+
+
+		.bar2 {
+			fill: brown;
+		}
+
+
+		.axis text {
+			font: 10px sans-serif;
+		}
+
+		.axis path,
+		.axis line {
+			fill: none;
+			stroke: #000;
+			shape-rendering: crispEdges;
+		}
+
+		.x.axis path {
+			display: none;
+		}
+
+		.whiteText {
+			fill: white;
+			font: 10px sans-serif;
+			text-anchor: middle;
+		}
+		.whiteText2 {
+			fill: white;
+			font: 10px sans-serif;
+			text-anchor: middle;
+		}
+		.bigLabel {
+			font: 500 100px "Helvetica Neue";
+			fill: #635959;
+		}
+		.overlay {
+			fill: none;
+			pointer-events: all;
+			cursor: ew-resize;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-8 col-md-9 col-lg-10">
+				<h2>D3 Sample5</h2>
+				<svg class="chart"></svg>
+			</div>
+		</div>
+	</div>
+	<script src="Scripts/jquery-1.10.2.min.js"></script>
+	<script charset="utf-8" src="Scripts/d3.js"></script>
+	<script src="Scripts/linq.js"></script>
+	<script type="text/javascript">
+		var margin = { top: 20, right: 30, bottom: 30, left: 40 },
+		width = 960 - margin.left - margin.right,
+		height = 500 - margin.top - margin.bottom;
+
+		var x = d3.scale.ordinal()
+		.rangeRoundBands([0, width], .1);
+		var y = d3.scale.linear()
+		.range([height, 0]);
+
+		var xAxis = d3.svg.axis()
+		.scale(x)
+		.orient("bottom");
+
+		var yAxis = d3.svg.axis()
+		.scale(y)
+		.orient("left")
+		.ticks(10);
+
+		var chart = d3.select(".chart")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom+200)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+		var label = chart.append("text").attr("class", "bigLabel").attr("text-anchor", "end")
+		.attr("y", height + 200).attr("x", width / 2).text('2015/01/01');
+		
+		d3.csv("tag.csv", type, function (error, data) {
+	         var linq = Enumerable.From(data);
+	         var result =
+	         linq.GroupBy(function (x) { return x.Date; })
+	         .Select(function (x) {
+	         	return {
+	         		Date: x.Key(),
+	         		GroupByDate: x.source
+	         	};
+	         }).ToArray();
+
+	         function interpolateData(date) {
+	         	var _index = result.map(function (e) { return e.Date; }).indexOf(date);
+	         	return result[_index].GroupByDate;
+	         }
+	         var dataset = interpolateData("2015/01/01");
+	         x.domain(dataset.map(function (d) { return d.Tag }));
+	         y.domain([0, d3.max(dataset.map(function (d) { return d.positive+d.negative }))]);
+
+	         var dateMax = d3.max(data, function (d) { return new Date(d.Date); });
+	         var dateMin = d3.min(data, function (d) { return new Date(d.Date); });
+	         var dateCount = Math.round(Math.abs((dateMax - dateMin) / (86400000)));
+
+	         chart.append("g")
+	         .attr("class", "x axis")
+	         .attr("transform", "translate(0," + height + ")")
+	         .call(xAxis);
+
+	         chart.append("g")
+	         .attr("class", "y axis")
+	         .call(yAxis);
+
+	         var barWidth = width / dataset.length;
+	         var bar = chart.selectAll(".bar")
+	         .data(dataset)
+	         .enter();
+
+	         bar.append("rect")
+	         .attr("x", function (d,i) { return i * barWidth +5; })
+	         .attr("y", function (d) { return y(d.positive); })
+	         .attr("class", "bar")
+	         .attr("height", function (d) { return height - y(d.positive); })
+	         .attr("width", function () {
+	         	return barWidth - 2;
+	         })
+	         .append("title")
+	         .text("正向評語");
+
+	         bar.append("text")
+	         .attr("class", "whiteText")
+	         .attr("x", function (d,i) { return i * barWidth+5+barWidth / 2; })
+	         .attr("y", function (d) { return y(d.positive) + 10; })
+	         .attr("dy", ".75em")
+	         .text(function (d) { return d.positive; });
+	         var bar2 = chart.selectAll(".bar2")
+	         .data(dataset)
+	         .enter();
+	         bar2.append("rect")
+	         .attr("x", function (d,i) { return i * barWidth +5; })
+	         .attr("y", function (d) { return y(d.positive+d.negative); })
+	         .attr("class", "bar2")
+	         .attr("height", function (d) { return  y(d.positive)-y(d.positive+d.negative); })
+	         .attr("width", function () {
+	         	return barWidth - 2;
+	         })
+	         .append("title")
+	         .text("負向評語");
+
+	         bar2.append("text")
+	         .attr("class", "whiteText2")
+	         .attr("x", function (d,i) { return i * barWidth+5+barWidth / 2; })
+	         .attr("y", function (d) { return y(d.positive+d.negative) + 10; })
+	         .attr("dy", ".75em")
+	         .text(function (d) { return d.negative; });
+
+			 // Add an overlay for the year label.
+			 var box = label.node().getBBox();
+
+			 var overlay = chart.append("rect")
+			 .attr("class", "overlay")
+			 .attr("x", box.x)
+			 .attr("y", box.y)
+			 .attr("width", box.width)
+			 .attr("height", box.height)
+			 .on("mouseover", enableInteraction);
+
+			 function enableInteraction() {
+			 	var yearScale = d3.scale.linear().domain([0, dateCount])
+			 	.range([box.x + 10, box.x + box.width - 10]).clamp(true);
+
+			 	overlay.on("mouseover", mouseover).on("mouseout", mouseout)
+			 	.on("mousemove", mousemove).on("touchmove", mousemove);
+			 	function mousemove() {
+			 		displayDate(yearScale.invert(d3.mouse(this)[0]));
+			 	}
+			 	function mouseover() {
+			 		label.classed("active", true);
+			 	}
+			 	function mouseout() {
+			 		label.classed("active", false);
+			 	}
+			 }
+	         // Updates the display to show the specified year.
+	         function displayDate(date) {
+
+	         	var _dd = toDate(date);
+	         	updateData(interpolateData(_dd));
+
+	         	label.text(_dd);
+	         }
+	         function toDate(m) {
+	         	var _pd = new Date();
+	         	_pd.setTime((dateMin.getTime() + m * 86400000));
+	         	var str = _pd.getFullYear() + "/" + padLeft((_pd.getMonth() + 1).toString(), 2) + "/" + padLeft(_pd.getDate().toString(), 2);
+	         	return str;
+	         }
+
+	     });
+		//UpdateData
+		function updateData(dataset) {
+			yMax = d3.max(dataset, function (d) { return d.positive + d.negative; });
+			var barWidth = width / dataset.length;
+			var bar = chart.selectAll(".bar").data(dataset);	
+			var bar2 = chart.selectAll(".bar2").data(dataset);
+			var whiteText = chart.selectAll(".whiteText").data(dataset);	
+			var whiteText2 = chart.selectAll(".whiteText2").data(dataset);
+			//Transition
+			y.domain([0, yMax]);
+			chart.select(".y.axis")
+			.transition()
+			.duration(100)
+			.call(yAxis);	
+			bar.transition()
+			.duration(100)
+			.attr("x", function (d,i) { return i * barWidth +5; })
+			.attr("y", function (d) { return y(d.positive); })
+			.attr("class", "bar")
+			.attr("height", function (d) { return height - y(d.positive); })
+			.attr("width", function () {
+				return barWidth - 2;
+			});
+
+			whiteText.transition()
+			.duration(100)
+			.attr("x", function (d,i) { return i * barWidth+5+barWidth / 2; })
+			.attr("y", function (d) { return y(d.positive) + 10; })
+			.attr("dy", ".75em")
+			.text(function (d) { return d.positive; });
+
+			bar2.transition()
+			.duration(100)
+			.attr("x", function (d,i) { return i * barWidth +5; })
+			.attr("y", function (d) { return y(d.positive+d.negative); })
+			.attr("class", "bar2")
+			.attr("height", function (d) { return  y(d.positive)-y(d.positive+d.negative); })
+			.attr("width", function () {
+				return barWidth - 2;
+			});
+
+			whiteText2.transition()
+			.duration(100)
+			.attr("x", function (d,i) { return i * barWidth+5+barWidth / 2; })
+			.attr("y", function (d) { return y(d.positive+d.negative) + 10; })
+			.attr("dy", ".75em")
+			.text(function (d) { return d.negative; });
+			//REMOVE
+			bar.exit()
+			.transition()
+			.duration(50)
+			.remove();
+			bar2.exit()
+			.transition()
+			.duration(50)
+			.remove();
+			whiteText.exit()
+			.transition()
+			.duration(50)
+			.remove();
+			whiteText2.exit()
+			.transition()
+			.duration(50)
+			.remove();
+		}
+		//accessor
+		function type(d) {
+			d.positive = 0;
+			d.negative = 0;
+			for (var key in d) {
+				if (key.endsWith("P"))
+					d.positive += +d[key];
+				if (key.endsWith("M"))
+					d.negative += +d[key];
+
+			}
+			return d;
+		}
+
+		function padLeft(str, lenght) {
+			if (str.length >= lenght)
+				return str;
+			else
+				return padLeft("0" + str, lenght);
+		}
+
+		
+	</script>
+</body>
+</html>
